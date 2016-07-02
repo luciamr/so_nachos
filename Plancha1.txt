@@ -88,6 +88,7 @@ Fuente: machine/mipssim.h
 	
 5. Explicar el código que procesa la instrucción "add".
 
+#define SIGN_BIT	0x80000000
 int sum; //define la variable int sum
 sum = registers[(int)instr->rs] + registers[(int)instr->rt]; //almacena en sum la suma de los int que se encuentran en rs y rt
 if (!((registers[(int)instr->rs] ^ registers[(int)instr->rt]) & SIGN_BIT) && //verifica 
@@ -96,4 +97,110 @@ if (!((registers[(int)instr->rs] ^ registers[(int)instr->rt]) & SIGN_BIT) && //v
     return;
 }
 registers[(int)instr->rd] = sum;
+Fuente: machine/mipssim.cc
 
+6. Nombrar los archivos fuente en los que figuran las funciones y métodos llamados por el main de NACHOS al ejecutarlo en el directorio threads.
+
+void ThreadTest(); threads/threadtest.cc
+void Copy(const char *unixFile, const char *nachosFile); filesys/fstest.cc
+void Print(const char *file); filesys/fstest.cc
+void PerformanceTest(void); filesys/fstest.cc
+void StartProcess(const char *file); userprog/progtest.cc
+void ConsoleTest(const char *in, const char *out); userprog/progtest.cc
+void MailTest(int networkID); network/nettest.cc
+
+7.
+
+8. Comentar el efecto de las distintas banderas de debug.
+
+'+' -- turn on all debug messages
+'t' -- thread system
+'s' -- semaphores, locks, and conditions
+'i' -- interrupt emulation
+'m' -- machine emulation (USER_PROGRAM)
+'d' -- disk emulation (FILESYS)
+'f' -- file system (FILESYS)
+'a' -- address spaces (USER_PROGRAM)
+'n' -- network emulation (NETWORK)
+
+9. Qué efecto hacen las macros ASSERT y DEBUG definidas en "utility.h"? 
+
+ASSERT(condition): si condition es true, no hace nada; si es false, imprime un mensaje y corta la ejecución.
+DEBUG(char flag, const char *format, ...): si la flag está habilitada, formatea e imprime la lista de argumentos que recibió; si no, no hace nada.
+
+10. Dónde están definidas las constantes USER_PROGRAM, FILESYS_NEEDED, FILESYS_STUB y NETWORK?
+
+USER_PROGRAM: userprog/Makefile, filesys/Makefile, vm/Makefile, network/Makefile
+FILESYS_NEEDED: userprog/Makefile, filesys/Makefile, vm/Makefile, network/Makefile
+FILESYS_STUB: userprog/Makefile, vm/Makefile
+NETWORK: network/Makefile
+
+11. Cuál es la diferencia entre las clases "list" y "synchlist"?
+
+La clase synchlist contiene una instancia de list y regula su acceso.
+La estructura de datos de la list solamente va a poder ser accedida de a un thread.
+Cuando se agrega un elemento a la lista, se despierta a todos los que están esperando que se incorpore un item.
+Los threads que intenten eliminar items de la list van a tener que esperar hasta que la list tenga al menos uno.
+
+12. En qué archivos está definida la función "main"? En qué archivo está definida la función "main" del ejecutable "nachos" del directorio "userprog"?
+
+grep -ri "main(" .
+./test/sort.c:main() -> para testing
+./test/matmult.c:main() -> para testing
+./test/halt.c:main() -> para testing
+./test/shell.c:main() -> para testing
+./test/filetest.c:main() -> para testing
+./bin/disasm.c:main(argc, argv)
+./bin/out.c:main(argc,argv)
+./bin/main.c:main(argc, argv)
+./threads/main.cc:main(int argc, char **argv)
+
+"main" -> bin: disasm.c, out.c, main.c; threads: main.cc
+La función "main" del ejecutable "nachos" del directorio "userprog" está definida en threads/main.cc.
+
+13. Qué línea de comandos soporta NACHOS? Qué efecto tiene la opción -rs?
+
+// Usage: nachos -d <debugflags> -rs <random seed #>
+//		-s -x <nachos file> -c <consoleIn> <consoleOut>
+//		-f -cp <unix file> <nachos file>
+//		-p <nachos file> -r <nachos file> -l -D -t
+//              -n <network reliability> -m <machine id>
+//              -o <other machine id>
+//              -z
+//
+//    -d causes certain debugging messages to be printed (cf. utility.h)
+//    -rs causes Yield to occur at random (but repeatable) spots
+//    -z prints the copyright message
+//
+//  USER_PROGRAM
+//    -s causes user programs to be executed in single-step mode
+//    -x runs a user program
+//    -c tests the console
+//
+//  FILESYS
+//    -f causes the physical disk to be formatted
+//    -cp copies a file from UNIX to Nachos
+//    -p prints a Nachos file to stdout
+//    -r removes a Nachos file from the file system
+//    -l lists the contents of the Nachos directory
+//    -D prints the contents of the entire file system 
+//    -t tests the performance of the Nachos file system
+//
+//  NETWORK
+//    -n sets the network reliability
+//    -m sets this machine's host id (needed for the network)
+//    -o runs a simple test of the Nachos network software
+//
+//  NOTE -- flags are ignored until the relevant assignment.
+
+-rs -> random seed (threads/system.cc)
+RandomInit(atoi(*(argv + 1)));	// initialize pseudo-random
+                // number generator
+randomYield = true;
+
+14. Modificar el ejemplo del directorio threads para que se generen 5 threads en lugar de 2.
+
+Ver threads/threadtest.cc.
+
+15. Modificar el ejemplo de para que estos 5 hilos utilicen un semáforo inicializado en 3.
+Ésto sólo debe ocurrir si se define la macro de compilación SEMAPHORE_TEST.
