@@ -7,7 +7,9 @@
 # All rights reserved.  See copyright.h for copyright notice and limitation 
 # of liability and disclaimer of warranty provisions.
 
-DEFINES = -DTHREADS  -DDFS_TICKS_FIX
+#Plancha 1 -15
+#DEFINES = -DTHREADS -DDFS_TICKS_FIX
+DEFINES = -DTHREADS -DDFS_TICKS_FIX -DSEMAPHORE_TEST
 INCPATH = -I../threads -I../machine
 HFILES = $(THREAD_H)
 CFILES = $(THREAD_C)

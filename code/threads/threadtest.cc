@@ -14,6 +14,12 @@
 
 #include "copyright.h"
 #include "system.h"
+#include "synch.h"
+
+//Plancha 1 - 15
+#ifdef SEMAPHORE_TEST
+    static Semaphore *semaphore;
+#endif
 
 //----------------------------------------------------------------------
 // SimpleThread
@@ -30,6 +36,12 @@ SimpleThread(void* name)
     // Reinterpret arg "name" as a string
     char* threadName = (char*)name;
     
+    //Plancha 1 - 15/16
+    #ifdef SEMAPHORE_TEST
+        semaphore->P();
+        DEBUG('s', "Thread \"%s\" -> Semaphore \"%s\" -> P()\n", threadName, semaphore->getName());
+    #endif
+    
     // If the lines dealing with interrupts are commented,
     // the code will behave incorrectly, because
     // printf execution may cause race conditions.
@@ -42,6 +54,12 @@ SimpleThread(void* name)
     IntStatus oldLevel = interrupt->SetLevel(IntOff); //orig comentado
     printf(">>> Thread %s has finished\n", threadName);
     interrupt->SetLevel(oldLevel); //orign comentado
+    
+    //Plancha 1 - 15/16
+    #ifdef SEMAPHORE_TEST
+        semaphore->V();
+        DEBUG('s', "Thread \"%s\" -> Semaphore \"%s\" -> V()\n", threadName, semaphore->getName());
+    #endif
 }
 
 //----------------------------------------------------------------------
@@ -63,6 +81,11 @@ ThreadTest()
     newThread->Fork (SimpleThread, (void*)threadname);
     */
 
+    //Plancha 1 - 15
+    #ifdef SEMAPHORE_TEST
+        semaphore = new Semaphore("threadtest semaphore", 3);
+    #endif
+    
     //Plancha 1 - 14
     char *threadname1 = new char[128];
     strcpy(threadname1,"Hilo 1");
@@ -81,6 +104,6 @@ ThreadTest()
     Thread* newThread4 = new Thread (threadname4);
     newThread4->Fork (SimpleThread, (void*)threadname4);
     
-    SimpleThread( (void*)"Hilo 0");
+    SimpleThread((void*)"Hilo 0");
 }
 

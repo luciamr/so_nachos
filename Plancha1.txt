@@ -1,5 +1,14 @@
 Plancha 1 - Introducción a Nachos
 
+**************************************************
+Para ejecutar NACHOS:
+> cd code/threads
+> make
+> ./nachos
+Para ejecutar NACHOS con banderas de debug:
+> ./nachos -d banderasElegidas
+**************************************************
+
 1. Cuánta memoria tiene la máquina simulada por Nachos?
 
 MemorySize = NumPhysPages * PageSize
@@ -202,5 +211,13 @@ randomYield = true;
 
 Ver threads/threadtest.cc.
 
-15. Modificar el ejemplo de para que estos 5 hilos utilicen un semáforo inicializado en 3.
+15. Modificar el ejemplo para que estos 5 hilos utilicen un semáforo inicializado en 3.
 Ésto sólo debe ocurrir si se define la macro de compilación SEMAPHORE_TEST.
+
+Ver threads/threadtest.cc.
+Para ejecutar NACHOS con SEMAPHORE_TEST agregar -DSEMAPHORE_TEST a DEFINES en code/threads/Makefile.
+
+16. Agregar al ejemplo anterior una línea de debug donde diga cuando cada hilo hace un P() y cuando un V().
+La salida debe verse por pantalla solamente si se activa esa bandera de debug.
+
+Ver threads/threadtest.cc.
