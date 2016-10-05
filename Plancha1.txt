@@ -3,6 +3,8 @@ Plancha 1 - Introducción a Nachos
 **************************************************
 Para ejecutar NACHOS:
 > cd code/threads
+> rm *.o
+> make depend
 > make
 > ./nachos
 Para ejecutar NACHOS con banderas de debug:
@@ -20,7 +22,7 @@ Fuente: machine/machine.h y machine/disk.h
 
 2. Cómo cambiaría ese valor?
 
-Modificando el valor de NumPhysPages.
+Modificando el tamaño de SectorSize.
 
 3. De qué tamaño es un disco?
 

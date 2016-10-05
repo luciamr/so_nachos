@@ -100,10 +100,28 @@ Semaphore::V()
 // Dummy functions -- so we can compile our later assignments 
 // Note -- without a correct implementation of Condition::Wait(), 
 // the test case in the network assignment won't work!
-Lock::Lock(const char* debugName) {}
+Lock::Lock(const char* debugName) {
+	name = debugName;
+	semaphore = new Semaphore(debugName, 1);
+}
+
 Lock::~Lock() {}
-void Lock::Acquire() {}
-void Lock::Release() {}
+
+void Lock::Acquire() {
+	ASSERT(!this->isHeldByCurrentThread());
+	semaphore->P();
+	thread = currentThread;
+}
+
+void Lock::Release() {
+	ASSERT(this->isHeldByCurrentThread());
+	thread = NULL;
+	semaphore->V();
+}
+
+bool Lock::isHeldByCurrentThread() {
+	return currentThread == thread;
+}
 
 Condition::Condition(const char* debugName, Lock* conditionLock) { }
 Condition::~Condition() { }
