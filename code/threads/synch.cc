@@ -100,6 +100,8 @@ Semaphore::V()
 // Dummy functions -- so we can compile our later assignments 
 // Note -- without a correct implementation of Condition::Wait(), 
 // the test case in the network assignment won't work!
+
+// Plancha 2 - Ejercicio 1
 Lock::Lock(const char* debugName) {
 	name = debugName;
 	semaphore = new Semaphore(debugName, 1);
@@ -120,13 +122,42 @@ void Lock::Release() {
 }
 
 bool Lock::isHeldByCurrentThread() {
-	return currentThread == thread;
+	return (currentThread == thread);
 }
 
-Condition::Condition(const char* debugName, Lock* conditionLock) { }
+Condition::Condition(const char* debugName, Lock* conditionLock) {
+	name = debugName;
+	lock = conditionLock;
+	semaphore = new Semaphore(debugName, 0);
+	count = 0;
+	countLock = new Lock(debugName);
+}
+
 Condition::~Condition() { }
-void Condition::Wait() { ASSERT(false); }
-void Condition::Signal() { }
-void Condition::Broadcast() { }
+void Condition::Wait() {
+	//ASSERT(false);
+	lock->Release();
+	countLock->Acquire();
+	count++;
+	semaphore->P();
+	countLock->Release();
+	lock->Acquire();
+}
+
+void Condition::Signal() {
+	countLock->Acquire();
+	count--;
+	semaphore->V();
+	countLock->Release();
+}
+
+void Condition::Broadcast() {
+	countLock->Acquire();
+	while(count > 0) {
+		count--;
+		semaphore->V();
+	}
+	countLock->Release();
+}
 
 

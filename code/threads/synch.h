@@ -146,7 +146,10 @@ class Condition {
 
   private:
     const char* name;
-    // aqu� se a�aden otros campos que sean necesarios
+    Lock* lock;
+    Semaphore* semaphore;
+    int count;
+    Lock* countLock;
 };
 
 /*
