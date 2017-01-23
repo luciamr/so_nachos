@@ -148,9 +148,10 @@ class Condition {
   private:
     const char* name;
     Lock* lock;
-    Semaphore* semaphore;
+    Semaphore* sem;
     int count;
     Lock* countLock;
+    Semaphore* handshake;
 };
 
 /*

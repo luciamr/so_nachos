@@ -117,8 +117,8 @@ void Lock::Acquire() {
 
 void Lock::Release() {
 	ASSERT(this->isHeldByCurrentThread());
-	thread = NULL;
 	semaphore->V();
+	thread = NULL;
 }
 
 bool Lock::isHeldByCurrentThread() {
@@ -128,34 +128,42 @@ bool Lock::isHeldByCurrentThread() {
 Condition::Condition(const char* debugName, Lock* conditionLock) {
 	name = debugName;
 	lock = conditionLock;
-	semaphore = new Semaphore(debugName, 0);
+	sem = new Semaphore("sem " + debugName, 0);
 	count = 0;
-	countLock = new Lock(debugName);
+	countLock = new Lock("lock " + debugName);
+	handshake = new Semaphore("handshake " + debugName, 0);
 }
 
 Condition::~Condition() { }
 void Condition::Wait() {
 	//ASSERT(false);
-	lock->Release();
 	countLock->Acquire();
 	count++;
-	semaphore->P();
 	countLock->Release();
+	lock->Release();
+	sem->P();
+	handshake->V();
 	lock->Acquire();
 }
 
 void Condition::Signal() {
 	countLock->Acquire();
-	count--;
-	semaphore->V();
+	if (count > 0) {
+		count--;
+		sem->V();
+		handshake->P();
+	}
 	countLock->Release();
 }
 
 void Condition::Broadcast() {
 	countLock->Acquire();
+	for(int i = 0; i < count; i++) {
+		sem->V();
+	}
 	while(count > 0) {
 		count--;
-		semaphore->V();
+		handshake->P();
 	}
 	countLock->Release();
 }
