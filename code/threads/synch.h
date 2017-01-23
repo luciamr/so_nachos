@@ -24,6 +24,7 @@
 #include "copyright.h"
 #include "thread.h"
 #include "list.h"
+#include <queue>
 
 // La siguiente clase define un "sem�foro" cuyo valor es un entero positivo.
 // El sem�foro ofrece s�lo dos operaciones, P() y V():
@@ -177,5 +178,26 @@ class Condition {
 };
 
 */
+
+class Puerto {
+  public:
+  // Constructor: inicia el puerto
+  Puerto(const char* debugName);
+
+  ~Puerto();          // destructor
+  const char* getName() { return name; }	// para depuración
+
+  // Operaciones sobre el puerto
+  void Send(int mensaje);
+  void Receive(int* mensaje);
+
+  private:
+    const char* name;		// para depuración
+    int buffer;
+    //std::queue<int>* buffer;
+    Lock* sem;
+    Condition* vacio;
+    Condition* lleno;
+};
 
 #endif // SYNCH_H

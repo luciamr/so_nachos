@@ -160,4 +160,35 @@ void Condition::Broadcast() {
 	countLock->Release();
 }
 
+Puerto::Puerto(const char* debugName) {
+	name = debugName;
+	//buffer = new std::queue<int>();
+	sem = new Lock(debugName);
+	vacio = new Condition(debugName, sem);
+	lleno = new Condition(debugName, sem);
+}
+
+Puerto::~Puerto() { }
+
+void Puerto::Send(int mensaje) {
+	sem->Acquire();
+	lleno->Wait();
+	buffer = mensaje;
+	//buffer->push(mensaje);
+	vacio->Signal();
+	sem->Release();
+}
+
+void Puerto::Receive(int* mensaje) {
+	sem->Acquire();
+	//while(buffer->empty()) {
+	//	vacio->Wait();
+	//}
+	vacio->Wait();
+	//*mensaje = buffer->front();
+	//buffer->pop();
+	*mensaje = buffer;
+	lleno->Signal();
+	sem->Release();
+}
 
