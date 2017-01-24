@@ -110,13 +110,13 @@ Lock::Lock(const char* debugName) {
 Lock::~Lock() {}
 
 void Lock::Acquire() {
-	ASSERT(!this->isHeldByCurrentThread());
+	ASSERT(!isHeldByCurrentThread());
 	semaphore->P();
 	thread = currentThread;
 }
 
 void Lock::Release() {
-	ASSERT(this->isHeldByCurrentThread());
+	ASSERT(isHeldByCurrentThread());
 	semaphore->V();
 	thread = NULL;
 }
@@ -128,18 +128,23 @@ bool Lock::isHeldByCurrentThread() {
 Condition::Condition(const char* debugName, Lock* conditionLock) {
 	name = debugName;
 	lock = conditionLock;
-	sem = new Semaphore("sem " + debugName, 0);
-	count = 0;
-	countLock = new Lock("lock " + debugName);
-	handshake = new Semaphore("handshake " + debugName, 0);
+	waiters = 0;
+	waitersLock = new Lock("cond_waitersLock");
+	sem = new Semaphore("cond_sem", 0);
+	handshake = new Semaphore("cond_handshake", 0);
 }
 
-Condition::~Condition() { }
+Condition::~Condition() {
+	delete waitersLock;
+	delete sem;
+	delete handshake;
+}
+
 void Condition::Wait() {
 	//ASSERT(false);
-	countLock->Acquire();
-	count++;
-	countLock->Release();
+	waitersLock->Acquire();
+	waiters++;
+	waitersLock->Release();
 	lock->Release();
 	sem->P();
 	handshake->V();
@@ -147,56 +152,60 @@ void Condition::Wait() {
 }
 
 void Condition::Signal() {
-	countLock->Acquire();
-	if (count > 0) {
-		count--;
+	waitersLock->Acquire();
+	if (waiters > 0) {
+		waiters--;
 		sem->V();
 		handshake->P();
 	}
-	countLock->Release();
+	waitersLock->Release();
 }
 
 void Condition::Broadcast() {
-	countLock->Acquire();
-	for(int i = 0; i < count; i++) {
+	waitersLock->Acquire();
+	for(int i = 0; i < waiters; i++) {
 		sem->V();
 	}
-	while(count > 0) {
-		count--;
+	while(waiters > 0) {
+		waiters--;
 		handshake->P();
 	}
-	countLock->Release();
+	waitersLock->Release();
 }
 
 Puerto::Puerto(const char* debugName) {
 	name = debugName;
-	//buffer = new std::queue<int>();
-	sem = new Lock(debugName);
-	vacio = new Condition(debugName, sem);
-	lleno = new Condition(debugName, sem);
+	full = false;
+	lock = new Lock("puerto_lock");
+	sendCondition = new Condition("puerto_sendCondition", lock);
+	receiveCondition = new Condition("puerto_receiveCondition", lock);
 }
 
-Puerto::~Puerto() { }
+Puerto::~Puerto() {
+	delete lock;
+	delete sendCondition;
+	delete receiveCondition;
+}
 
 void Puerto::Send(int mensaje) {
-	sem->Acquire();
-	lleno->Wait();
+	lock->Acquire();
+	while (full) {
+		sendCondition->Wait();
+	}
 	buffer = mensaje;
-	//buffer->push(mensaje);
-	vacio->Signal();
-	sem->Release();
+	full = true;
+	receiveCondition->Signal();
+	lock->Release();
 }
 
 void Puerto::Receive(int* mensaje) {
-	sem->Acquire();
-	//while(buffer->empty()) {
-	//	vacio->Wait();
-	//}
-	vacio->Wait();
-	//*mensaje = buffer->front();
-	//buffer->pop();
+	lock->Acquire();
+	while (!full) {
+		receiveCondition->Wait();
+	}
 	*mensaje = buffer;
-	lleno->Signal();
-	sem->Release();
+	full = false;
+	sendCondition->Broadcast();
+	lock->Release();
 }
 

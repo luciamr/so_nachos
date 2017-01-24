@@ -148,9 +148,9 @@ class Condition {
   private:
     const char* name;
     Lock* lock;
+    int waiters;
+    Lock* waitersLock;
     Semaphore* sem;
-    int count;
-    Lock* countLock;
     Semaphore* handshake;
 };
 
@@ -186,6 +186,7 @@ class Puerto {
   Puerto(const char* debugName);
 
   ~Puerto();          // destructor
+
   const char* getName() { return name; }	// para depuración
 
   // Operaciones sobre el puerto
@@ -193,12 +194,12 @@ class Puerto {
   void Receive(int* mensaje);
 
   private:
-    const char* name;		// para depuración
+    const char* name; // para depuración
     int buffer;
-    //std::queue<int>* buffer;
-    Lock* sem;
-    Condition* vacio;
-    Condition* lleno;
+    bool full; //indica si hay información esperando ser leída
+    Lock* lock;
+    Condition* sendCondition;
+    Condition* receiveCondition;
 };
 
 #endif // SYNCH_H
