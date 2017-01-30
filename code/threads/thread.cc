@@ -32,7 +32,7 @@ const unsigned STACK_FENCEPOST = 0xdeadbeef;
 //	"threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
 
-Thread::Thread(const char* threadName)
+Thread::Thread(const char* threadName, bool threadJoinable)
 {
     name = threadName;
     stackTop = NULL;
@@ -41,7 +41,14 @@ Thread::Thread(const char* threadName)
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
-}
+
+    //Plancha 1 - Ej 3
+    joinable = threadJoinable;
+    if (joinable) {
+    	parentJoinSemaphore = new Semaphore("thread_join_parent_semaphore", 0);
+    	childJoinSemaphore = new Semaphore("thread_join_child_semaphore", 0);
+    }
+ }
 
 //----------------------------------------------------------------------
 // Thread::~Thread
@@ -60,6 +67,13 @@ Thread::~Thread()
     DEBUG('t', "Deleting thread \"%s\"\n", name);
 
     ASSERT(this != currentThread);
+
+    //Plancha 1 - Ej 3
+    if (joinable) {
+    	delete parentJoinSemaphore;
+    	delete childJoinSemaphore;
+    }
+
     if (stack != NULL)
 	DeallocBoundedArray((char *) stack, StackSize * sizeof(HostMemoryAddress));
 }
@@ -151,6 +165,12 @@ Thread::Finish ()
     
     DEBUG('t', "Finishing thread \"%s\"\n", getName());
     
+    //Plancha 1 - Ej 3
+    if (joinable) {
+    	parentJoinSemaphore->V(); //desbloquea al thread llamante del Join
+    	childJoinSemaphore->P(); //evita que éste thread se destruya antes del Join
+    }
+
     threadToBeDestroyed = currentThread;
     Sleep();					// invokes SWITCH
     // not reached
@@ -310,3 +330,15 @@ Thread::RestoreUserState()
 	machine->WriteRegister(i, userRegisters[i]);
 }
 #endif
+
+//Plancha 1 - Ej 3
+void Thread::Join() //asumo que éste thread es hijo de joinCallerThread
+{
+	ASSERT(joinable); //se debe haber indicado en el constructor que se llamaría a Join
+
+	joinCallerThread = currentThread; //guarda una referencia al thread desde donde se llamó a Join
+    DEBUG('t', "Joining thread \"%s\", Parent thread \"%s\"\n", getName(), joinCallerThread->getName());
+
+	parentJoinSemaphore->P(); //bloquea al thread llamante
+	childJoinSemaphore->V(); //permite que éste thread finalice
+}

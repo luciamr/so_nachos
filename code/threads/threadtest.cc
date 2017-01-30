@@ -45,7 +45,7 @@ SimpleThread(void* name)
     // If the lines dealing with interrupts are commented,
     // the code will behave incorrectly, because
     // printf execution may cause race conditions.
-    for (int num = 0; num < 10; num++) {
+    for (int num = 0; num < 5; num++) { //10
         IntStatus oldLevel = interrupt->SetLevel(IntOff); //orig comentado
 	    printf("*** thread %s looped %d times\n", threadName, num);
 	    interrupt->SetLevel(oldLevel); //orig comentado
@@ -89,20 +89,21 @@ ThreadTest()
     //Plancha 1 - 14
     char *threadname1 = new char[128];
     strcpy(threadname1,"Hilo 1");
-    Thread* newThread1 = new Thread (threadname1);
-    newThread1->Fork (SimpleThread, (void*)threadname1);
+    Thread* newThread1 = new Thread(threadname1, false);
+    newThread1->Fork(SimpleThread, (void*)threadname1);
     char *threadname2 = new char[128];
     strcpy(threadname2,"Hilo 2");
-    Thread* newThread2 = new Thread (threadname2);
-    newThread2->Fork (SimpleThread, (void*)threadname2);
+    Thread* newThread2 = new Thread(threadname2, true);
+    newThread2->Fork(SimpleThread, (void*)threadname2);
+    newThread2->Join();
     char *threadname3 = new char[128];
     strcpy(threadname3,"Hilo 3");
-    Thread* newThread3 = new Thread (threadname3);
-    newThread3->Fork (SimpleThread, (void*)threadname3);
+    Thread* newThread3 = new Thread(threadname3, true); //está bien? joinable sin join
+    newThread3->Fork(SimpleThread, (void*)threadname3);
     char *threadname4 = new char[128];
     strcpy(threadname4,"Hilo 4");
-    Thread* newThread4 = new Thread (threadname4);
-    newThread4->Fork (SimpleThread, (void*)threadname4);
+    Thread* newThread4 = new Thread(threadname4, false);
+    newThread4->Fork(SimpleThread, (void*)threadname4);
     
     SimpleThread((void*)"Hilo 0");
 }

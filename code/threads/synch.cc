@@ -142,6 +142,7 @@ Condition::~Condition() {
 
 void Condition::Wait() {
 	//ASSERT(false);
+	ASSERT(!lock->isHeldByCurrentThread());
 	waitersLock->Acquire();
 	waiters++;
 	waitersLock->Release();
@@ -152,6 +153,7 @@ void Condition::Wait() {
 }
 
 void Condition::Signal() {
+	ASSERT(!lock->isHeldByCurrentThread());
 	waitersLock->Acquire();
 	if (waiters > 0) {
 		waiters--;
@@ -162,6 +164,7 @@ void Condition::Signal() {
 }
 
 void Condition::Broadcast() {
+	ASSERT(!lock->isHeldByCurrentThread());
 	waitersLock->Acquire();
 	for(int i = 0; i < waiters; i++) {
 		sem->V();
@@ -189,23 +192,23 @@ Puerto::~Puerto() {
 
 void Puerto::Send(int mensaje) {
 	lock->Acquire();
-	while (full) {
+	while (full) {	//espera hasta que haya lugar para escribir
 		sendCondition->Wait();
 	}
 	buffer = mensaje;
-	full = true;
-	receiveCondition->Signal();
+	full = true; //indica que hay un mensaje esperando ser leído
+	receiveCondition->Signal(); //despierta a Receive
 	lock->Release();
 }
 
 void Puerto::Receive(int* mensaje) {
 	lock->Acquire();
-	while (!full) {
+	while (!full) { //espera hasta que haya un mensaje para leer
 		receiveCondition->Wait();
 	}
 	*mensaje = buffer;
-	full = false;
-	sendCondition->Broadcast();
+	full = false; //indica que hay espacio para escribir
+	sendCondition->Signal(); //despierta a Send
 	lock->Release();
 }
 

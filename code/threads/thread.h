@@ -45,6 +45,8 @@
 #include "addrspace.h"
 #endif
 
+class Semaphore;
+
 // CPU register state to be saved on context switch.  
 // x86 processors needs 9 32-bit registers, whereas x64 has 8 extra registers
 // We allocate room for the maximum of these two architectures
@@ -78,7 +80,7 @@ class Thread {
     HostMemoryAddress machineState[MachineStateSize];	// all registers except for stackTop
 
   public:
-    Thread(const char* debugName);	// initialize a Thread 
+    Thread(const char* debugName, bool threadJoinable);	// initialize a Thread
     ~Thread(); 				// deallocate a Thread
 					// NOTE -- thread being deleted
 					// must not be running when delete 
@@ -99,6 +101,9 @@ class Thread {
     const char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
 
+    //Plancha 1 - Ej 2
+    void Join(); //bloquea al llamante hasta que éste thread termine
+
   private:
     // some of the private data for this class is listed above
     
@@ -107,6 +112,12 @@ class Thread {
 					// (If NULL, don't deallocate stack)
     ThreadStatus status;		// ready, running or blocked
     const char* name;
+
+    //Plancha 1 - Ej 3
+    bool joinable; //indica si se llamará a un Join sobre éste thread
+    Thread* joinCallerThread;
+    Semaphore* parentJoinSemaphore;
+    Semaphore* childJoinSemaphore;
 
     void StackAllocate(VoidFunctionPtr func, void* arg);
     					// Allocate a stack for thread.
