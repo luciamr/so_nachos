@@ -48,6 +48,9 @@ Thread::Thread(const char* threadName, bool threadJoinable)
     	parentJoinSemaphore = new Semaphore("thread_join_parent_semaphore", 0);
     	childJoinSemaphore = new Semaphore("thread_join_child_semaphore", 0);
     }
+
+    //Plancha 2 - Ej 4 tmp! ver!
+    priority = MIN_PRIORIDAD;
  }
 
 //----------------------------------------------------------------------
@@ -99,7 +102,7 @@ Thread::~Thread()
 //----------------------------------------------------------------------
 
 void 
-Thread::Fork(VoidFunctionPtr func, void* arg)
+Thread::Fork(VoidFunctionPtr func, void* arg, int prio /*= (MIN_PRIORIDAD - 1)*/)
 {
 #ifdef HOST_x86_64
     DEBUG('t', "Forking thread \"%s\" with func = 0x%lx, arg = %ld\n",
@@ -109,6 +112,11 @@ Thread::Fork(VoidFunctionPtr func, void* arg)
     DEBUG('t', "Forking thread \"%s\" with func = 0x%x, arg = %d\n",
 	  name, (HostMemoryAddress) func, arg);
 #endif
+
+    //Plancha 2 - Ej 4
+    //Si no recibe un valor para la prioridad se usa la del padre
+    priority = prio < MIN_PRIORIDAD ? currentThread->getPriority() : prio;
+    ASSERT(priority >= MIN_PRIORIDAD && priority <= MAX_PRIORIDAD); //Verifica que sea válida
 
     StackAllocate(func, arg);
 

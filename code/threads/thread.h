@@ -45,6 +45,9 @@
 #include "addrspace.h"
 #endif
 
+#define MIN_PRIORIDAD 0
+#define MAX_PRIORIDAD 4
+
 class Semaphore;
 
 // CPU register state to be saved on context switch.  
@@ -88,7 +91,13 @@ class Thread {
 
     // basic thread operations
 
-    void Fork(VoidFunctionPtr func, void* arg);	// Make thread run (*func)(arg)
+    //void Fork(VoidFunctionPtr func, void* arg);	// Make thread run (*func)(arg)
+
+    //void Fork(VoidFunctionPtr func, void* arg);	// Make thread run (*func)(arg)
+    //Plancha 2 - Ej 4
+    //Agrego un parámetro opcional para la prioridad
+    void Fork(VoidFunctionPtr func, void* arg, int prio = (MIN_PRIORIDAD - 1));	// Make thread run (*func)(arg)
+
     void Yield();  				// Relinquish the CPU if any 
 						// other thread is runnable
     void Sleep();  				// Put the thread to sleep and 
@@ -101,8 +110,11 @@ class Thread {
     const char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
 
-    //Plancha 1 - Ej 2
+    //Plancha 2 - Ej 2
     void Join(); //bloquea al llamante hasta que éste thread termine
+
+    //Plancha 2 - Ej 4
+    int getPriority() { return priority; }
 
   private:
     // some of the private data for this class is listed above
@@ -113,11 +125,14 @@ class Thread {
     ThreadStatus status;		// ready, running or blocked
     const char* name;
 
-    //Plancha 1 - Ej 3
+    //Plancha 2 - Ej 3
     bool joinable; //indica si se llamará a un Join sobre éste thread
     Thread* joinCallerThread;
     Semaphore* parentJoinSemaphore;
     Semaphore* childJoinSemaphore;
+
+    //Plancha 2 - Ej 4
+    int priority;
 
     void StackAllocate(VoidFunctionPtr func, void* arg);
     					// Allocate a stack for thread.

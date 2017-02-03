@@ -28,8 +28,14 @@
 //----------------------------------------------------------------------
 
 Scheduler::Scheduler()
-{ 
-    readyList = new List<Thread*>; 
+{
+	//Plancha 2- Ej 4
+	//Inicializo todas las colas
+	int i;
+
+	for(i = 0; i < NUM_COLAS_PRIORIDAD; i++) {
+		readyList[i] = new List<Thread*>;
+	}
 } 
 
 //----------------------------------------------------------------------
@@ -39,7 +45,13 @@ Scheduler::Scheduler()
 
 Scheduler::~Scheduler()
 { 
-    delete readyList; 
+	//Plancha 2- Ej 4
+	//Borro todas las colas
+	int i;
+
+	for(i = 0; i < NUM_COLAS_PRIORIDAD; i++) {
+		delete readyList[i];
+	}
 } 
 
 //----------------------------------------------------------------------
@@ -55,8 +67,10 @@ Scheduler::ReadyToRun (Thread *thread)
 {
     DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
 
+    int p = thread->getPriority();
+    ASSERT(p >= MIN_PRIORIDAD && p <= MAX_PRIORIDAD); //Verifico si es una prioridad válida
     thread->setStatus(READY);
-    readyList->Append(thread);
+    readyList[p]->Append(thread); //Lo ubico en la cola correspondiente
 }
 
 //----------------------------------------------------------------------
@@ -70,7 +84,17 @@ Scheduler::ReadyToRun (Thread *thread)
 Thread *
 Scheduler::FindNextToRun ()
 {
-    return readyList->Remove();
+	//Plancha 2 - Ej 4
+	Thread *nextThread = NULL;
+	int i;
+
+	//Recorro las colas en orden decreciente de prioridad
+	//Si no hay ningun thread devuelvo NULL, si no, el primero encontrado
+	for(i = NUM_COLAS_PRIORIDAD - 1; nextThread == NULL && i >= 0; i--) {
+		nextThread = readyList[i]->Remove();
+	}
+
+    return nextThread;
 }
 
 //----------------------------------------------------------------------
@@ -123,7 +147,7 @@ Scheduler::Run (Thread *nextThread)
     // point, we were still running on the old thread's stack!
     if (threadToBeDestroyed != NULL) {
         delete threadToBeDestroyed;
-	threadToBeDestroyed = NULL;
+        threadToBeDestroyed = NULL;
     }
     
 #ifdef USER_PROGRAM
@@ -149,5 +173,10 @@ void
 Scheduler::Print()
 {
     printf("Ready list contents:\n");
-    readyList->Apply(ThreadPrint);
+
+    //Plancha 2- Ej 4
+	//int i;
+	for(int i = 0; i < NUM_COLAS_PRIORIDAD; i++) {
+		readyList[i]->Apply(ThreadPrint);
+	}
 }
