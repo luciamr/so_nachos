@@ -28,6 +28,9 @@ class Scheduler {
     Thread* FindNextToRun();			// Dequeue first thread on the ready list, if any, and return thread.
     void Run(Thread* nextThread);		// Cause nextThread to start running
     void Print();						// Print contents of ready list
+    //Plancha 2 - Ej 4
+    //Se usa para actualizar las colas de prioridad luego de modificar la prioridad de un thread
+    void UpdateReadyList(Thread* thread, int oldPriority, int newPriority);
     
   private:
     //Plancha 2 - Ej 4

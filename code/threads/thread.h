@@ -115,6 +115,7 @@ class Thread {
 
     //Plancha 2 - Ej 4
     int getPriority() { return priority; }
+    void setPriority(int p) { priority = p; } //Necesario para manejar inversión de prioridades (scheduler)
 
   private:
     // some of the private data for this class is listed above

@@ -180,3 +180,31 @@ Scheduler::Print()
 		readyList[i]->Apply(ThreadPrint);
 	}
 }
+
+//Plancha 2 - Ej 4
+void
+Scheduler::UpdateReadyList(Thread* thread, int oldPriority, int newPriority) {
+
+	//Verifico que tanto la vieja prioridad como la nueva sean válidas
+	ASSERT(oldPriority >= MIN_PRIORIDAD && oldPriority<= MAX_PRIORIDAD);
+	ASSERT(newPriority >= MIN_PRIORIDAD && newPriority<= MAX_PRIORIDAD);
+
+	Thread *nextThread = NULL;
+	List<Thread*> *newList = new List<Thread*>;
+
+	//Recorro la lista de threads correspondiente a la vieja prioridad
+	//Cuando encuentro el que quiero actualizar lo ubico en la cola correspondiente
+	//Creo una nueva lista para que el resto permanezca en el mismo orden en que estaba
+	for (nextThread = readyList[oldPriority]->Remove(); nextThread != NULL; nextThread = readyList[oldPriority]->Remove()) {
+		if (nextThread == thread) {
+			readyList[newPriority]->Append(thread);
+		}
+		else {
+			newList->Append(thread);
+		}
+	}
+
+	//Acomodo las listas
+	delete readyList[oldPriority];
+	readyList[oldPriority] = newList;
+}

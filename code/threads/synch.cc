@@ -105,24 +105,39 @@ Semaphore::V()
 Lock::Lock(const char* debugName) {
 	name = debugName;
 	semaphore = new Semaphore(debugName, 1);
+	holderThread = NULL;
+	prioritySemaphore = new Semaphore(debugName, 1);
 }
 
-Lock::~Lock() {}
+Lock::~Lock() {
+	delete semaphore;
+	delete prioritySemaphore;
+}
 
 void Lock::Acquire() {
 	ASSERT(!isHeldByCurrentThread());
+
+	prioritySemaphore->P();
+	if (holderThread != NULL && holderThread->getPriority() < currentThread->getPriority()) {
+		int oldPriority = holderThread->getPriority();
+		int newPriority = currentThread->getPriority();
+		holderThread->setPriority(newPriority);
+		scheduler->UpdateReadyList(holderThread, oldPriority, newPriority);
+	}
+	prioritySemaphore->V();
+
 	semaphore->P();
-	thread = currentThread;
+	holderThread = currentThread;
 }
 
 void Lock::Release() {
 	ASSERT(isHeldByCurrentThread());
 	semaphore->V();
-	thread = NULL;
+	holderThread = NULL;
 }
 
 bool Lock::isHeldByCurrentThread() {
-	return (currentThread == thread);
+	return (currentThread == holderThread);
 }
 
 Condition::Condition(const char* debugName, Lock* conditionLock) {

@@ -89,7 +89,8 @@ class Lock {
     const char* name;				// para depuración
     // añadir aquí otros campos que sean necesarios
     Semaphore *semaphore;	// se implementa el lock usando un semáforo como base
-    Thread *thread; //
+    Thread *holderThread; //
+    Semaphore *prioritySemaphore; // se usa para proteger la actualización de prioridad del thread
 
 };
 
