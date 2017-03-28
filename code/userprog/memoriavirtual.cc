@@ -28,7 +28,7 @@ void ReadBufferFromUser(int usrAddress, char *outBuffer, unsigned byteCount) {
 	for(i = 0; i < byteCount && machine->ReadMem(usrAddress + i, 1, &intValue); i++)
 		outBuffer[i] = (char)intValue;
 
-	if (i != byteCount - 1)
+	if (i != byteCount)
 		errorDebug;
 }
 
@@ -47,6 +47,6 @@ void WriteBufferToUser(const char *buffer, int usrAddress, unsigned byteCount) {
 
 	for(i = 0; i < byteCount && machine->WriteMem(usrAddress + i, 1, buffer[i]); i++);
 
-	if (i != byteCount - 1)
+	if (i != byteCount)
 		errorDebug;
 }
