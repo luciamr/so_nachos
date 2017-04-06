@@ -26,6 +26,7 @@
 #include "syscall.h"
 #include "memoriavirtual.h"
 #include "openfile.h"
+#include "utility.h"
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -52,6 +53,21 @@
 
 #define FILENAME_MAX_LENGTH 128
 #define BUFFER_MAX_LENGTH 256
+#define MIN(x,y) (((x)<(y))?(x):(y))
+
+//Es necesario aumentar el Program Counter al finalizar la instrucción.
+//De lo contrario entra en un loop y ejecuta la misma sentencia una y otra vez.
+void UpdateProgramCounter()
+{
+	int pc;
+
+	pc = machine->ReadRegister(PCReg);
+	machine->WriteRegister(PrevPCReg, pc);
+	pc = machine->ReadRegister(NextPCReg);
+	machine->WriteRegister(PCReg, pc);
+	pc += 4;
+	machine->WriteRegister(NextPCReg, pc);
+}
 
 void HandlerHalt()
 {
@@ -79,7 +95,8 @@ void HandlerRead() {
 	int bufferAddress = machine->ReadRegister(4);
 	int size = machine->ReadRegister(5);
 	OpenFileId fileId = machine->ReadRegister(6);
-	char buffer[BUFFER_MAX_LENGTH];
+	int bufferSize = MIN(size, BUFFER_MAX_LENGTH - 1);
+	char *buffer = (char *)malloc(sizeof(char *) * (bufferSize + 1)); //+ 1 para '\0'
 	int bytesRead;
 
 	switch (fileId) {
@@ -87,8 +104,9 @@ void HandlerRead() {
 			bytesRead = 0;
 			break;
 		case ConsoleInput:
-			for(bytesRead = 0; bytesRead < size && bytesRead < BUFFER_MAX_LENGTH; bytesRead++)
+			for(bytesRead = 0; bytesRead < bufferSize; bytesRead++)
 				buffer[bytesRead] = synchConsole->GetChar();
+			buffer[bytesRead] = '\0';
 			break;
 		default:
 			//completar, por ahora sólo a consola
@@ -106,17 +124,17 @@ void HandlerWrite() {
 	int bufferAddress = machine->ReadRegister(4);
 	int size = machine->ReadRegister(5);
 	OpenFileId fileId = machine->ReadRegister(6);
-	char buffer[BUFFER_MAX_LENGTH];
+	int bufferSize = MIN(size, BUFFER_MAX_LENGTH - 1);
+	char *buffer = (char *)malloc(sizeof(char *) * (bufferSize + 1)); //+ 1 para '\0'
+	//char buffer[BUFFER_MAX_LENGTH];
 	int bytesWritten;
 
 	ReadBufferFromUser(bufferAddress, buffer, size);
 
 	switch (fileId) {
 		case ConsoleOutput:
-			for(bytesWritten = 0; bytesWritten < size && bytesWritten < BUFFER_MAX_LENGTH; bytesWritten++)
-			{		DEBUG('a', "HandlerWrite %d %c\n", bytesWritten, buffer[bytesWritten]);
-
-				synchConsole->PutChar(buffer[bytesWritten]);}
+			for(bytesWritten = 0; bytesWritten < bufferSize && buffer[bytesWritten] != '\0'; bytesWritten++)
+				synchConsole->PutChar(buffer[bytesWritten]);
 			break;
 		case ConsoleInput:
 			bytesWritten = 0;
@@ -140,7 +158,7 @@ void HandlerOpen()
 	file = fileSystem->Open(fileName);
 
 	if (file != NULL) {
-		//fileId = currentThread->
+		fileId = currentThread->getFilesTable()->Insert(file);
 		DEBUG('a', "File %s has been successfully opened.\n", fileName);
 	}
 	else {
@@ -154,12 +172,8 @@ void HandlerClose()
 {
 	int fileId = machine->ReadRegister(4);
 
-/*	if (fileSystem->Close(fileId)) {
-		DEBUG('a', "File has been successfully closed.\n");
-	}
-	else {
-		DEBUG('a', "Error, failed to close file.\n");
-	}*/
+	currentThread->getFilesTable()->Delete(fileId);
+	DEBUG('a', "File has been successfully closed (OpenFileId -> %d.\n", fileId);
 }
 
 void HandlerExit()
@@ -182,7 +196,7 @@ ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
 
-    printf("Exception Handler: %d\n", type);
+    //printf("Exception Handler: %d\n", type);
 
     if (which == SyscallException) {
     	switch (type) {
@@ -222,4 +236,6 @@ ExceptionHandler(ExceptionType which)
     	printf("Unexpected user mode exception %d %d\n", which, type);
     	ASSERT(false);
     }
+
+	UpdateProgramCounter();
 }

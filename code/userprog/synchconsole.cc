@@ -1,6 +1,21 @@
 // synchconsole.cc
 
 #include "synchconsole.h"
+#include <stdio.h>
+
+void static
+ReadAvailCallback(void *arg)
+{
+	SynchConsole *synchConsole = (SynchConsole *)arg;
+	synchConsole->ReadAvail();
+}
+
+void static
+WriteDoneCallback(void *arg)
+{
+	SynchConsole *synchConsole = (SynchConsole *)arg;
+	synchConsole->WriteDone();
+}
 
 //----------------------------------------------------------------------
 // SynchConsole::SynchConsole
@@ -12,7 +27,7 @@
 SynchConsole::SynchConsole(const char *in, const char *out)
 {
 	//Console recibe los handler de interrupciones para poder manejar las callback
-	console = new Console(in, out, ReadAvail, WriteDone, 0);
+	console = new Console(in, out, &ReadAvailCallback, &WriteDoneCallback, this);
 	getLock = new Lock("synchconsole_getLock");
     putLock = new Lock("synchconsole_putLock");
     readAvailSemaphore = new Semaphore("synchconsole_readAvailSemaphore", 0);
@@ -48,6 +63,8 @@ SynchConsole::GetChar()
     readAvailSemaphore->P(); //espera que el caracter esté disponible
     c = console->GetChar();
     getLock->Release();
+
+    return c;
 }
 
 //----------------------------------------------------------------------
@@ -70,11 +87,7 @@ SynchConsole::PutChar(char c)
 //  un caracter para leer.
 //----------------------------------------------------------------------
 
-void
-SynchConsole::ReadAvail()
-{
-    readAvailSemaphore->V();
-}
+void SynchConsole::ReadAvail() { readAvailSemaphore->V(); }
 
 //----------------------------------------------------------------------
 // SynchConsole::WriteDone
@@ -82,8 +95,5 @@ SynchConsole::ReadAvail()
 //  que se complete la escritura.
 //----------------------------------------------------------------------
 
-void
-SynchConsole::WriteDone()
-{
-    writeDoneSemaphore->V();
-}
+void SynchConsole::WriteDone() { writeDoneSemaphore->V(); }
+

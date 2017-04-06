@@ -17,7 +17,7 @@
 # do a gmake depend in the subdirectory -- this will modify the Makefile
 # to keep track of the new dependency.
 
-# You might want to play with the CFLAGS, but if you use -O it may
+# You might want to play with the CFLAGS, but if you use synchconsole-O it may
 # break the thread system.  You might want to use -fno-inline if
 # you need to call some inline functions from the debugger.
 
@@ -79,8 +79,9 @@ USERPROG_H = ../userprog/addrspace.h\
 	../machine/mipssim.h\
 	../machine/translate.h\
 	../userprog/memoriavirtual.h\
-	../userprog/synchconsole.h
-
+	../userprog/synchconsole.h\
+	../userprog/filestable.h
+	
 USERPROG_C = ../userprog/addrspace.cc\
 	../userprog/bitmap.cc\
 	../userprog/exception.cc\
@@ -90,10 +91,11 @@ USERPROG_C = ../userprog/addrspace.cc\
 	../machine/mipssim.cc\
 	../machine/translate.cc\
 	../userprog/memoriavirtual.cc\
-	../userprog/synchconsole.cc
+	../userprog/synchconsole.cc\
+	../userprog/filestable.cc
 
 USERPROG_O = addrspace.o bitmap.o exception.o progtest.o console.o machine.o \
-	mipssim.o translate.o memoriavirtual.o synchconsole.o
+	mipssim.o translate.o memoriavirtual.o synchconsole.o filestable.o
 
 VM_H = 
 VM_C = 

@@ -40,6 +40,7 @@ Thread::Thread(const char* threadName, bool threadJoinable)
     status = JUST_CREATED;
 #ifdef USER_PROGRAM
     space = NULL;
+    filesTable = new FilesTable();
 #endif
 
     //Plancha 1 - Ej 3
@@ -76,6 +77,10 @@ Thread::~Thread()
     	delete parentJoinSemaphore;
     	delete childJoinSemaphore;
     }
+
+#ifdef USER_PROGRAM
+    delete filesTable;
+#endif
 
     if (stack != NULL)
 	DeallocBoundedArray((char *) stack, StackSize * sizeof(HostMemoryAddress));

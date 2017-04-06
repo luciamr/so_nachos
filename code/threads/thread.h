@@ -43,6 +43,7 @@
 #ifdef USER_PROGRAM
 #include "machine.h"
 #include "addrspace.h"
+#include "filestable.h"
 #endif
 
 #define MIN_PRIORIDAD 0
@@ -117,6 +118,9 @@ class Thread {
     int getPriority() { return priority; }
     void setPriority(int p) { priority = p; } //Necesario para manejar inversión de prioridades (scheduler)
 
+    //Plancha 3 - Ej 2
+    FilesTable *getFilesTable() { return filesTable; }
+
   private:
     // some of the private data for this class is listed above
     
@@ -134,6 +138,9 @@ class Thread {
 
     //Plancha 2 - Ej 4
     int priority;
+
+    //Plancha 3 - Ej 2
+    FilesTable *filesTable;
 
     void StackAllocate(VoidFunctionPtr func, void* arg);
     					// Allocate a stack for thread.
