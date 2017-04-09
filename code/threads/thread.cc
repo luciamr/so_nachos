@@ -34,8 +34,10 @@ const unsigned STACK_FENCEPOST = 0xdeadbeef;
 
 Thread::Thread(const char* threadName, bool threadJoinable)
 {
-    name = threadName;
-    stackTop = NULL;
+	//necesito tener una copia local del nombre para que se conserve aunque termine la rutina llamante?
+	//ver!
+	name = threadName;
+	stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
 #ifdef USER_PROGRAM

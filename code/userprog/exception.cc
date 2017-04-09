@@ -29,6 +29,7 @@
 #include "utility.h"
 #include "thread.h"
 
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -56,6 +57,8 @@
 #define BUFFER_MAX_LENGTH 256
 #define MIN(x,y) (((x)<(y))?(x):(y))
 
+void StartProcess(const char *filename);
+
 //Es necesario aumentar el Program Counter al finalizar la instrucción.
 //De lo contrario entra en un loop y ejecuta la misma sentencia una y otra vez.
 void UpdateProgramCounter()
@@ -72,7 +75,7 @@ void UpdateProgramCounter()
 
 void HandlerHalt()
 {
-	DEBUG('a', "Shutdown, initiated by user program.\n");
+	DEBUG('c', "Shutdown, initiated by user program.\n");
    	interrupt->Halt();
 }
 
@@ -84,10 +87,10 @@ void HandlerCreate()
 	ReadStringFromUser(fileNameAddress, fileName, FILENAME_MAX_LENGTH - 1);
 
 	if (fileSystem->Create(fileName, initialSize)) {
-		DEBUG('a', "File %s has been successfully created.\n");
+		DEBUG('c', "File %s has been successfully created.\n", fileName);
 	}
 	else {
-		DEBUG('a', "Error, failed to create file %s.\n", fileName);
+		DEBUG('c', "Error, failed to create file %s.\n", fileName);
 	}
 }
 
@@ -116,6 +119,7 @@ void HandlerRead() {
 			break;
 	}
 
+	DEBUG('e', "Read from console: %s.\n", buffer);
 	WriteBufferToUser(buffer, bufferAddress, bytesRead);
 	machine->WriteRegister(2, bytesRead); //escribe la cantidad de caracteres leídos (return de Read)
 }
@@ -131,6 +135,7 @@ void HandlerWrite() {
 	int bytesWritten;
 
 	ReadBufferFromUser(bufferAddress, buffer, size);
+	DEBUG('e', "Write to console: %s.\n", buffer);
 
 	switch (fileId) {
 		case ConsoleOutput:
@@ -141,10 +146,14 @@ void HandlerWrite() {
 			bytesWritten = 0;
 			break;
 		default:
-			//completar, por ahora sólo a consola
+			OpenFile *file = currentThread->getFilesTable()->Get(fileId);
+			if (file == NULL) {
+				DEBUG('c', "The file could NOT be found, unable to write to file: OpenFileId -> %d.\n", fileId);
+				return;
+			}
+			file->Write(buffer, bufferSize);
 			break;
 	}
-
 }
 
 void HandlerOpen()
@@ -160,10 +169,10 @@ void HandlerOpen()
 
 	if (file != NULL) {
 		fileId = currentThread->getFilesTable()->Insert(file);
-		DEBUG('a', "File %s has been successfully opened.\n", fileName);
+		DEBUG('c', "File %s has been successfully opened.\n", fileName);
 	}
 	else {
-		DEBUG('a', "Error, failed to open file %s.\n", fileName);
+		DEBUG('c', "Error, failed to open file %s.\n", fileName);
 	}
 
 	machine->WriteRegister(2, fileId); //escribe la id del archivo (return de Open)
@@ -174,7 +183,7 @@ void HandlerClose()
 	int fileId = machine->ReadRegister(4);
 
 	currentThread->getFilesTable()->Delete(fileId);
-	DEBUG('a', "File has been successfully closed (OpenFileId -> %d.\n", fileId);
+	DEBUG('c', "File has been successfully closed: OpenFileId -> %d.\n", fileId);
 }
 
 void HandlerExit()
@@ -184,9 +193,9 @@ void HandlerExit()
 	int spaceId = processesTable->GetSpaceId(currentThread);
 
 	if (value == 0)
-		DEBUG('a', "The user program has exited normally.\n");
+		DEBUG('c', "The user program has exited normally.\n");
 	else
-		DEBUG('a', "The user program has NOT exited normally.\n");
+		DEBUG('c', "The user program has NOT exited normally.\n");
 
 	//If the spaceId was found, save the exit value (needed in case of join)
 	if (spaceId != -1)
@@ -203,14 +212,14 @@ void HandlerJoin()
 	int threadExitValue;
 
 	if (zombieThread) {
-		DEBUG('a', "The process is a zombie or could NOT be found, unable to join: SpaceId -> %d.\n", spaceId);
+		DEBUG('c', "The process is a zombie or could NOT be found, unable to join: SpaceId -> %d.\n", spaceId);
 		return;
 	}
 
 	thread = processesTable->GetProcess(spaceId);
 
 	if (thread == NULL) {
-			DEBUG('a', "The process could NOT be found, unable to join: SpaceId -> %d.\n", spaceId);
+			DEBUG('c', "The process could NOT be found, unable to join: SpaceId -> %d.\n", spaceId);
 			return;
 	}
 
@@ -222,7 +231,32 @@ void HandlerJoin()
 
 void HandlerExec()
 {
+	char fileName[FILENAME_MAX_LENGTH];
+	int fileNameAddress = machine->ReadRegister(4);
+	Thread *newThread;
+	SpaceId spaceId;
 
+	ReadStringFromUser(fileNameAddress, fileName, FILENAME_MAX_LENGTH - 1);
+
+	/*
+	OpenFile *file;
+	AddrSpace *address;
+	file = fileSystem->Open(fileName);
+	if (file == NULL) {
+		DEBUG('c', "The file %s could NOT be found, unable to Exec.\n", %s);
+		return;
+	}
+    address = new AddrSpace(file);
+    delete file;
+    address->InitRegisters();
+    address->RestoreState();
+    machine->Run();
+	*/
+
+	newThread = new Thread(fileName, true);
+	spaceId = processesTable->Insert(newThread);
+	machine->WriteRegister(2, spaceId);
+	newThread->Fork((VoidFunctionPtr)StartProcess, (void *)fileName);
 }
 
 void

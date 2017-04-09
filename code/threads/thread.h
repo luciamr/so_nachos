@@ -93,8 +93,6 @@ class Thread {
     // basic thread operations
 
     //void Fork(VoidFunctionPtr func, void* arg);	// Make thread run (*func)(arg)
-
-    //void Fork(VoidFunctionPtr func, void* arg);	// Make thread run (*func)(arg)
     //Plancha 2 - Ej 4
     //Agrego un parámetro opcional para la prioridad
     void Fork(VoidFunctionPtr func, void* arg, int prio = (MIN_PRIORIDAD - 1));	// Make thread run (*func)(arg)
