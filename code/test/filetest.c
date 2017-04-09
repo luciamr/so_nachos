@@ -12,12 +12,23 @@
 
 #include "syscall.h"
 
+
 int
 main()
 {
+	//Original
     Create("test.txt");
     OpenFileId o = Open("test.txt");  
     Write("Hello world\n",12,o);
+    //Close(o);
+
+    //For testing read
+    OpenFileId r = Open("read.txt");
+    char buffer[200];
+    int bytesRead;
+    bytesRead = Read(buffer, 10, r);
+    Write(buffer, 10, o);
     Close(o);
+    Close(r);
     /* not reached */
 }

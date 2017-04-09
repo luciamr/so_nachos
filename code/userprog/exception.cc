@@ -113,13 +113,12 @@ void HandlerRead() {
 			buffer[bytesRead] = '\0';
 			break;
 		default:
-			//completar, por ahora sólo a consola
-			//OpenFile *file; // = currentThread-> (fileId);
-			//bytesRead = file->Read(buffer, size);
+			OpenFile *file = currentThread->getFilesTable()->Get(fileId);
+			bytesRead = file->Read(buffer, size);
 			break;
 	}
 
-	DEBUG('e', "Read from console: %s.\n", buffer);
+	DEBUG('c', "Read: %s\n", buffer);
 	WriteBufferToUser(buffer, bufferAddress, bytesRead);
 	machine->WriteRegister(2, bytesRead); //escribe la cantidad de caracteres leídos (return de Read)
 }
@@ -135,7 +134,7 @@ void HandlerWrite() {
 	int bytesWritten;
 
 	ReadBufferFromUser(bufferAddress, buffer, size);
-	DEBUG('e', "Write to console: %s.\n", buffer);
+	DEBUG('c', "Write: %s\n", buffer);
 
 	switch (fileId) {
 		case ConsoleOutput:
@@ -143,7 +142,7 @@ void HandlerWrite() {
 				synchConsole->PutChar(buffer[bytesWritten]);
 			break;
 		case ConsoleInput:
-			bytesWritten = 0;
+			DEBUG('c', "Unable to write to console input.\n");
 			break;
 		default:
 			OpenFile *file = currentThread->getFilesTable()->Get(fileId);
