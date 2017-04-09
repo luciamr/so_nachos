@@ -34,6 +34,7 @@ SynchDisk   *synchDisk;
 
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
+ProcessesTable *processesTable; // tabla de procesos - Plancha 3
 SynchConsole *synchConsole; // consola - Plancha 3
 #endif
 
@@ -179,6 +180,7 @@ Initialize(int argc, char **argv)
     
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first
+    processesTable = new ProcessesTable(); // Plancha 3
     synchConsole = new SynchConsole(NULL, NULL); // Plancha 3
 #endif
 
@@ -214,6 +216,7 @@ Cleanup()
     
 #ifdef USER_PROGRAM
     delete machine;
+    delete processesTable; // Plancha 3
     delete synchConsole; // Plancha 3
 #endif
 

@@ -80,7 +80,8 @@ USERPROG_H = ../userprog/addrspace.h\
 	../machine/translate.h\
 	../userprog/memoriavirtual.h\
 	../userprog/synchconsole.h\
-	../userprog/filestable.h
+	../userprog/filestable.h\
+	../userprog/processestable.h
 	
 USERPROG_C = ../userprog/addrspace.cc\
 	../userprog/bitmap.cc\
@@ -92,10 +93,11 @@ USERPROG_C = ../userprog/addrspace.cc\
 	../machine/translate.cc\
 	../userprog/memoriavirtual.cc\
 	../userprog/synchconsole.cc\
-	../userprog/filestable.cc
+	../userprog/filestable.cc\
+	../userprog/processestable.cc
 
 USERPROG_O = addrspace.o bitmap.o exception.o progtest.o console.o machine.o \
-	mipssim.o translate.o memoriavirtual.o synchconsole.o filestable.o
+	mipssim.o translate.o memoriavirtual.o synchconsole.o filestable.o processestable.o
 
 VM_H = 
 VM_C = 

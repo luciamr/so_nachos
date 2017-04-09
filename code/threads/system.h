@@ -15,6 +15,7 @@
 #include "interrupt.h"
 #include "stats.h"
 #include "timer.h"
+#include "processestable.h"
 #include "synchconsole.h"
 
 // Initialization and cleanup routines
@@ -33,6 +34,7 @@ extern Timer *timer;				// the hardware alarm clock
 #ifdef USER_PROGRAM
 #include "machine.h"
 extern Machine* machine;	// user program memory and registers
+extern ProcessesTable *processesTable; // tabla de procesos - Plancha 3
 extern SynchConsole *synchConsole; // consola - Plancha 3
 #endif
 

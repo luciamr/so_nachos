@@ -27,6 +27,7 @@
 #include "memoriavirtual.h"
 #include "openfile.h"
 #include "utility.h"
+#include "thread.h"
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -179,11 +180,44 @@ void HandlerClose()
 void HandlerExit()
 {
 
+	int value = machine->ReadRegister(4);
+	int spaceId = processesTable->GetSpaceId(currentThread);
+
+	if (value == 0)
+		DEBUG('a', "The user program has exited normally.\n");
+	else
+		DEBUG('a', "The user program has NOT exited normally.\n");
+
+	//If the spaceId was found, save the exit value (needed in case of join)
+	if (spaceId != -1)
+		processesTable->SetExitValue(spaceId, value);
+
+	currentThread->Finish();
 }
 
 void HandlerJoin()
 {
+	SpaceId spaceId = machine->ReadRegister(4);
+	bool zombieThread = processesTable->Zombie(spaceId);
+	Thread *thread;
+	int threadExitValue;
 
+	if (zombieThread) {
+		DEBUG('a', "The process is a zombie or could NOT be found, unable to join: SpaceId -> %d.\n", spaceId);
+		return;
+	}
+
+	thread = processesTable->GetProcess(spaceId);
+
+	if (thread == NULL) {
+			DEBUG('a', "The process could NOT be found, unable to join: SpaceId -> %d.\n", spaceId);
+			return;
+	}
+
+	thread->Join();
+
+	threadExitValue = processesTable->GetExitValue(spaceId);
+	machine->WriteRegister(2, threadExitValue);
 }
 
 void HandlerExec()
