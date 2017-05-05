@@ -36,6 +36,7 @@ SynchDisk   *synchDisk;
 Machine *machine;	// user program memory and registers
 ProcessesTable *processesTable; // tabla de procesos - Plancha 3
 SynchConsole *synchConsole; // consola - Plancha 3
+BitMap *memoryBitMap; // Plancha 3
 #endif
 
 #ifdef NETWORK
@@ -182,6 +183,7 @@ Initialize(int argc, char **argv)
     machine = new Machine(debugUserProg);	// this must come first
     processesTable = new ProcessesTable(); // Plancha 3
     synchConsole = new SynchConsole(NULL, NULL); // Plancha 3
+    memoryBitMap = new BitMap(NumPhysPages); // Plancha 3
 #endif
 
 #ifdef FILESYS
@@ -218,6 +220,7 @@ Cleanup()
     delete machine;
     delete processesTable; // Plancha 3
     delete synchConsole; // Plancha 3
+    delete memoryBitMap; // Plancha 3
 #endif
 
 #ifdef FILESYS_NEEDED

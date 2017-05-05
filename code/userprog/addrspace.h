@@ -32,6 +32,9 @@ class AddrSpace {
     void RestoreState();		// info on a context switch 
 
   private:
+    ExceptionType Translate(int virtAddr, int* physAddr, int size, bool writing);
+
+  private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!
     unsigned int numPages;		// Number of pages in the virtual 

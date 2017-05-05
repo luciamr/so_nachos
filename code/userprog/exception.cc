@@ -57,8 +57,6 @@
 #define BUFFER_MAX_LENGTH 256
 #define MIN(x,y) (((x)<(y))?(x):(y))
 
-void StartProcess(const char *filename);
-
 //Es necesario aumentar el Program Counter al finalizar la instrucción.
 //De lo contrario entra en un loop y ejecuta la misma sentencia una y otra vez.
 void UpdateProgramCounter()
@@ -71,6 +69,15 @@ void UpdateProgramCounter()
 	machine->WriteRegister(PCReg, pc);
 	pc += 4;
 	machine->WriteRegister(NextPCReg, pc);
+}
+
+void ProcessCreator(int arg)
+{
+	currentThread->space->InitRegisters();
+	currentThread->space->RestoreState();
+
+	machine->Run(); //lleva al user program
+	ASSERT(false); //nunca retorna de machine->Run()
 }
 
 void HandlerHalt()
@@ -220,6 +227,7 @@ void HandlerJoin()
 	if (thread == NULL) {
 			DEBUG('c', "The process could NOT be found, unable to join: SpaceId -> %d.\n", spaceId);
 			return;
+
 	}
 
 	thread->Join();
@@ -234,28 +242,24 @@ void HandlerExec()
 	int fileNameAddress = machine->ReadRegister(4);
 	Thread *newThread;
 	SpaceId spaceId;
+	OpenFile *file;
+	AddrSpace *space;
 
 	ReadStringFromUser(fileNameAddress, fileName, FILENAME_MAX_LENGTH - 1);
 
-	/*
-	OpenFile *file;
-	AddrSpace *address;
 	file = fileSystem->Open(fileName);
 	if (file == NULL) {
-		DEBUG('c', "The file %s could NOT be found, unable to Exec.\n", %s);
+		DEBUG('c', "The file %s could NOT be found, unable to Exec.\n", fileName);
 		return;
 	}
-    address = new AddrSpace(file);
-    delete file;
-    address->InitRegisters();
-    address->RestoreState();
-    machine->Run();
-	*/
+    space = new AddrSpace(file);
+    newThread = new Thread(fileName, true);
+    newThread->space = space;
+    spaceId = processesTable->Insert(newThread);
+    machine->WriteRegister(2, spaceId);
+	newThread->Fork((VoidFunctionPtr)ProcessCreator, (void *)fileName);
 
-	newThread = new Thread(fileName, true);
-	spaceId = processesTable->Insert(newThread);
-	machine->WriteRegister(2, spaceId);
-	newThread->Fork((VoidFunctionPtr)StartProcess, (void *)fileName);
+    delete file;
 }
 
 void
@@ -272,27 +276,35 @@ ExceptionHandler(ExceptionType which)
     		   	break;
     		case SC_Create:
     			HandlerCreate();
+    			UpdateProgramCounter();
     			break;
     		case SC_Read:
     			HandlerRead();
+    			UpdateProgramCounter();
     			break;
     		case SC_Write:
     			HandlerWrite();
+    			UpdateProgramCounter();
     			break;
     		case SC_Open:
     			HandlerOpen();
+    			UpdateProgramCounter();
     			break;
     		case SC_Close:
     			HandlerClose();
+    			UpdateProgramCounter();
     			break;
     		case SC_Exit:
     			HandlerExit();
+    			UpdateProgramCounter();
     			break;
     		case SC_Join:
     			HandlerJoin();
+    			UpdateProgramCounter();
     			break;
     		case SC_Exec:
     			HandlerExec();
+    			UpdateProgramCounter();
     			break;
     		default:
     			printf("Unknown syscall code %d\n", type);
@@ -304,5 +316,4 @@ ExceptionHandler(ExceptionType which)
     	ASSERT(false);
     }
 
-	UpdateProgramCounter();
 }

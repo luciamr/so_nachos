@@ -61,6 +61,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 {
     NoffHeader noffH;
     unsigned int i, size;
+    int physAddr; //Plancha 3
 
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
     if ((noffH.noffMagic != NOFFMAGIC) && 
@@ -75,42 +76,41 @@ AddrSpace::AddrSpace(OpenFile *executable)
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
 
-    ASSERT(numPages <= NumPhysPages);		// check we're not trying
-						// to run anything too big --
-						// at least until we have
-						// virtual memory
+    // check we're not trying to run anything too big at least until we have virtual memory
+    //ASSERT(numPages <= NumPhysPages);
+    ASSERT(numPages <= (unsigned int) memoryBitMap->NumClear());
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
 // first, set up the translation 
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
-	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	pageTable[i].physicalPage = i;
-	pageTable[i].valid = true;
-	pageTable[i].use = false;
-	pageTable[i].dirty = false;
-	pageTable[i].readOnly = false;  // if the code segment was entirely on 
-					// a separate page, we could set its 
-					// pages to be read-only
+    	pageTable[i].virtualPage = i;
+    	// for now, virtual page # = phys page #
+    	//pageTable[i].physicalPage = i;
+		pageTable[i].physicalPage = memoryBitMap->Find(); //Plancha 3
+		pageTable[i].valid = true;
+		pageTable[i].use = false;
+		pageTable[i].dirty = false;
+		pageTable[i].readOnly = false;
+// if the code segment was entirely on a separate page, we could set its pages to be read-only
+		bzero(&machine->mainMemory[(pageTable[i].physicalPage) * PageSize], PageSize); //Plancha 3
     }
     
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
-    bzero(machine->mainMemory, size);
+    // bzero(machine->mainMemory, size);
 
 // then, copy in the code and data segments into memory
     if (noffH.code.size > 0) {
-        DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
-			noffH.code.virtualAddr, noffH.code.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
-			noffH.code.size, noffH.code.inFileAddr);
+        DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", noffH.code.virtualAddr, noffH.code.size);
+        Translate(noffH.code.virtualAddr, &physAddr, noffH.code.size, false);
+        executable->ReadAt(&(machine->mainMemory[physAddr]), noffH.code.size, noffH.code.inFileAddr);
     }
     if (noffH.initData.size > 0) {
-        DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
-			noffH.initData.virtualAddr, noffH.initData.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
-			noffH.initData.size, noffH.initData.inFileAddr);
+        DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", noffH.initData.virtualAddr, noffH.initData.size);
+        Translate(noffH.initData.virtualAddr, &physAddr, noffH.initData.size, false);
+        executable->ReadAt(&(machine->mainMemory[physAddr]), noffH.initData.size, noffH.initData.inFileAddr);
     }
 
 }
@@ -122,6 +122,11 @@ AddrSpace::AddrSpace(OpenFile *executable)
 
 AddrSpace::~AddrSpace()
 {
+	unsigned int i;
+
+	for (i = 0; i < numPages; i++)
+		memoryBitMap->Clear(pageTable[i].physicalPage);
+
    delete pageTable;
 }
 
@@ -180,4 +185,74 @@ void AddrSpace::RestoreState()
 {
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+}
+
+// Plancha 3
+//----------------------------------------------------------------------
+// Machine::Translate
+// 	Translate a virtual address into a physical address, using
+//	either a page table or a TLB.  Check for alignment and all sorts
+//	of other errors, and if everything is ok, set the use/dirty bits in
+//	the translation table entry, and store the translated physical
+//	address in "physAddr".  If there was an error, returns the type
+//	of the exception.
+//
+//	"virtAddr" -- the virtual address to translate
+//	"physAddr" -- the place to store the physical address
+//	"size" -- the amount of memory being read or written
+// 	"writing" -- if true, check the "read-only" bit in the TLB
+//----------------------------------------------------------------------
+
+ExceptionType
+AddrSpace::Translate(int virtAddr, int* physAddr, int size, bool writing)
+{
+    unsigned int vpn, offset;
+    TranslationEntry *entry;
+    unsigned int pageFrame;
+
+    DEBUG('a', "\tTranslate 0x%x, %s: ", virtAddr, writing ? "write" : "read");
+
+// check for alignment errors
+    if (((size == 4) && (virtAddr & 0x3)) || ((size == 2) && (virtAddr & 0x1))){
+	DEBUG('a', "alignment problem at %d, size %d!\n", virtAddr, size);
+	return AddressErrorException;
+    }
+
+    ASSERT(pageTable != NULL);
+
+// calculate the virtual page number, and offset within the page,
+// from the virtual address
+    vpn = (unsigned) virtAddr / PageSize;
+    offset = (unsigned) virtAddr % PageSize;
+
+	if (vpn >= numPages) {
+	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", virtAddr, numPages);
+	    return AddressErrorException;
+	} else if (!pageTable[vpn].valid) {
+	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", virtAddr, numPages);
+	    return PageFaultException;
+	}
+
+	entry = &pageTable[vpn];
+    if (entry->readOnly && writing) {	// trying to write to a read-only page
+    	DEBUG('a', "%d mapped read-only!\n", virtAddr);
+    	return ReadOnlyException;
+    }
+    pageFrame = entry->physicalPage;
+
+    // if the pageFrame is too big, there is something really wrong!
+    // An invalid translation was loaded into the page table or TLB.
+    if (pageFrame >= NumPhysPages) {
+    	DEBUG('a', "*** frame %d > %d!\n", pageFrame, NumPhysPages);
+    	return BusErrorException;
+    }
+
+    entry->use = true;		// set the use, dirty bits
+    if (writing)
+	entry->dirty = true;
+
+    *physAddr = pageFrame * PageSize + offset;
+    ASSERT((*physAddr >= 0) && ((*physAddr + size) <= MemorySize));
+    DEBUG('a', "phys addr = 0x%x\n", *physAddr);
+    return NoException;
 }
