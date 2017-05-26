@@ -37,6 +37,7 @@ Machine *machine;	// user program memory and registers
 ProcessesTable *processesTable; // tabla de procesos - Plancha 3
 SynchConsole *synchConsole; // consola - Plancha 3
 BitMap *memoryBitMap; // Plancha 3
+Timer *slicerTimer; // Plancha 3
 #endif
 
 #ifdef NETWORK
@@ -72,6 +73,22 @@ TimerInterruptHandler(void* dummy)
 {
     if (interrupt->getStatus() != IdleMode)
 	interrupt->YieldOnReturn();
+}
+
+//----------------------------------------------------------------------
+// TimerTimeSlicing
+// Plancha 3
+// Construida a partir de TimerInterruptHandler para implementar Time Slicing
+//----------------------------------------------------------------------
+static void
+TimerTimeSlicing(void* dummy)
+{
+	static int i = 0;
+	i++;
+    if (i >= TIME_SLICING && interrupt->getStatus() != IdleMode) {
+    	i = 0;
+    	interrupt->YieldOnReturn();
+    }
 }
 
 //----------------------------------------------------------------------
@@ -158,8 +175,9 @@ Initialize(int argc, char **argv)
     stats = new Statistics();			// collect statistics
     interrupt = new Interrupt;			// start up interrupt handling
     scheduler = new Scheduler();		// initialize the ready queue
+
     if (randomYield)				// start the timer (if needed)
-	timer = new Timer(TimerInterruptHandler, 0, randomYield);
+    timer = new Timer(TimerInterruptHandler, 0, randomYield);
 
     threadToBeDestroyed = NULL;
 
@@ -184,6 +202,7 @@ Initialize(int argc, char **argv)
     processesTable = new ProcessesTable(); // Plancha 3
     synchConsole = new SynchConsole(NULL, NULL); // Plancha 3
     memoryBitMap = new BitMap(NumPhysPages); // Plancha 3
+    slicerTimer = new Timer(TimerTimeSlicing, 0, false); // Plancha 3
 #endif
 
 #ifdef FILESYS

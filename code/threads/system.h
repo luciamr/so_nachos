@@ -34,10 +34,12 @@ extern Timer *timer;				// the hardware alarm clock
 #include "processestable.h"
 #include "synchconsole.h"
 #include "bitmap.h"
+#define	TIME_SLICING 50 // Plancha 3
 extern Machine* machine;	// user program memory and registers
 extern ProcessesTable *processesTable; // tabla de procesos - Plancha 3
 extern SynchConsole *synchConsole; // consola - Plancha 3
-extern BitMap *memoryBitMap; //Plancha 3
+extern BitMap *memoryBitMap; // Plancha 3
+extern Timer *slicerTimer; // Plancha 3
 #endif
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 
