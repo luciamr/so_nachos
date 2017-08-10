@@ -116,9 +116,6 @@ class Thread {
     int getPriority() { return priority; }
     void setPriority(int p) { priority = p; } //Necesario para manejar inversión de prioridades (scheduler)
 
-    //Plancha 3 - Ej 2
-    FilesTable *getFilesTable() { return filesTable; }
-
   private:
     // some of the private data for this class is listed above
     
@@ -137,9 +134,6 @@ class Thread {
     //Plancha 2 - Ej 4
     int priority;
 
-    //Plancha 3 - Ej 2
-    FilesTable *filesTable;
-
     void StackAllocate(VoidFunctionPtr func, void* arg);
     					// Allocate a stack for thread.
 					// Used internally by Fork()
@@ -151,11 +145,19 @@ class Thread {
 
     int userRegisters[NumTotalRegs];	// user-level CPU register state
 
+  private:
+    //Plancha 3 - Ej 2
+    FilesTable *filesTable;
+
   public:
     void SaveUserState();		// save user-level register state
     void RestoreUserState();		// restore user-level register state
 
     AddrSpace *space;			// User code this thread is running.
+
+    //Plancha 3 - Ej 2
+    FilesTable *getFilesTable() { return filesTable; }
+
 #endif
 };
 
