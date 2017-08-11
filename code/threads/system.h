@@ -40,6 +40,7 @@ extern ProcessesTable *processesTable; // tabla de procesos - Plancha 3
 extern SynchConsole *synchConsole; // consola - Plancha 3
 extern BitMap *memoryBitMap; // Plancha 3
 extern Timer *slicerTimer; // Plancha 3
+static void TimerTimeSlicing(void* dummy); // Plancha 3
 #endif
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 

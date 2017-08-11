@@ -187,22 +187,6 @@ Initialize(int argc, char **argv)
     synchConsole = new SynchConsole(NULL, NULL); // Plancha 3
     memoryBitMap = new BitMap(NumPhysPages); // Plancha 3
     slicerTimer = new Timer(TimerTimeSlicing, 0, false); // Plancha 3
-
-    //----------------------------------------------------------------------
-    // TimerTimeSlicing
-    // Plancha 3
-    // Construida a partir de TimerInterruptHandler para implementar Time Slicing
-    //----------------------------------------------------------------------
-    static void
-    TimerTimeSlicing(void* dummy)
-    {
-    	static int i = 0;
-    	i++;
-        if (i >= TIME_SLICING && interrupt->getStatus() != IdleMode) {
-        	i = 0;
-        	interrupt->YieldOnReturn();
-        }
-    }
 #endif
 
 #ifdef FILESYS
@@ -257,3 +241,20 @@ Cleanup()
     Exit(0);
 }
 
+#ifdef USER_PROGRAM
+//----------------------------------------------------------------------
+// TimerTimeSlicing
+// Plancha 3
+// Construida a partir de TimerInterruptHandler para implementar Time Slicing
+//----------------------------------------------------------------------
+static void
+TimerTimeSlicing(void* dummy)
+{
+	static int i = 0;
+	i++;
+    if (i >= TIME_SLICING && interrupt->getStatus() != IdleMode) {
+    	i = 0;
+    	interrupt->YieldOnReturn();
+    }
+}
+#endif
